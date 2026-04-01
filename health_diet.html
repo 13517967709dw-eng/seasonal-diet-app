@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>节气食养 - 你的智能身材管理助手</title>
+    <style>
+        :root {
+            --primary-color: #4a7c59;
+            --accent-color: #8c9e7b;
+            --bg-color: #f9fbf9;
+            --text-color: #333;
+            --card-bg: #fff;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 { margin: 0; font-size: 1.8rem; letter-spacing: 2px; }
+        
+        /* 调试信息样式 */
+        #debug-info {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 5px;
+            background: rgba(0,0,0,0.1);
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .control-panel {
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: 2px solid var(--primary-color);
+            background: transparent;
+            color: var(--primary-color);
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:hover, button.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .result-area {
+            padding: 30px;
+            display: none; 
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .season-badge {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-card {
+            background: #fdfdfd;
+            border-left: 5px solid var(--primary-color);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .food-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .food-tag {
+            background: #eef5ef;
+            color: var(--primary-color);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .recipe-box {
+            background: #fff8f0;
+            border: 1px solid #ffe0b2;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .recipe-title {
+            color: #d35400;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .recipe-title::before { content: '🥣'; margin-right: 8px; }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.8rem;
+            color: #999;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>顺时而食 · 动出好身材</h1>
+        <!-- 这里显示具体日期 -->
+        <p id="current-date">正在获取时间...</p>
+        <!-- 这里显示调试信息，方便你看系统判断的季节 -->
+        <div id="debug-info">系统识别季节：检测中...</div>
+    </header>
+
+    <div class="control-panel">
+        <h3>您目前的健身目标是什么？</h3>
+        <p style="color: #666; font-size: 0.9rem;">我们将结合今日节气为您推荐</p>
+        <div class="btn-group">
+            <button onclick="generatePlan('fat_loss')">🔥 减脂瘦身</button>
+            <button onclick="generatePlan('muscle_gain')">💪 增肌塑形</button>
+            <button onclick="generatePlan('maintenance')">🧘‍♀️ 养生塑形</button>
+        </div>
+    </div>
+
+    <div id="result" class="result-area">
+        <div class="season-header">
+            <span class="season-badge" id="season-name">当前节气</span>
+            <p id="season-desc" style="margin:0; color:#555;"></p>
+        </div>
+
+        <div class="recommendation-card">
+            <h3>🥗 推荐时令食材</h3>
+            <p>顺应时节，营养密度最高：</p>
+            <div class="food-list" id="food-tags"></div>
+        </div>
+
+        <div class="recipe-box">
+            <div class="recipe-title" id="recipe-name">食谱名称</div>
+            <p id="recipe-detail">食谱详情...</p>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: #e8f4ea; border-radius: 8px;">
+            <h4>💡 养生小贴士</h4>
+            <p id="health-tip" style="margin:0; font-size: 0.95rem;"></p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 节气食养助手 | 科学饮食，健康生活</p>
+    </footer>
+</div>
+
+<script>
+    // --- 修复部分：逻辑更简单直接 ---
+
+    // 1. 获取并显示日期
+    const dateElement = document.getElementById('current-date');
+    const debugElement = document.getElementById('debug-info');
+    const today = new Date();
+    
+    // 使用更稳定的日期格式化
+    const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+    dateElement.innerText = `今天是：${dateStr}`;
+
+    // 2. 季节判断逻辑 (直接在这里运行，不等待用户点击)
+    const currentMonth = today.getMonth() + 1;
+    let currentTerm = {};
+
+    if (currentMonth >= 3 && currentMonth <= 4) {
+        currentTerm = { name: "春季 (立春/雨水/清明)", desc: "万物复苏，阳气生发，宜养肝。" };
+    } else if (currentMonth >= 5 && currentMonth <= 7) {
+        currentTerm = { name: "夏季 (立夏/小满/大暑)", desc: "心火渐旺，宜清淡饮食，防暑降温。" };
+    } else if (currentMonth >= 8 && currentMonth <= 10) {
+        currentTerm = { name: "秋季 (立秋/白露/秋分)", desc: "燥气当令，宜滋阴润肺，防秋燥。" };
+    } else {
+        currentTerm = { name: "冬季 (立冬/小雪/大寒)", desc: "万物收藏，宜温补肝肾，藏精养气。" };
+    }
+
+    // 显示调试信息
+    debugElement.innerText = `系统识别季节：${currentTerm.name}`;
+    
+    // 更新结果区域的节气显示
+    document.getElementById('season-name').innerText = `当前时节：${currentTerm.name}`;
+    document.getElementById('season-desc').innerText = currentTerm.desc;
+
+    // 3. 推荐逻辑函数
+    function generatePlan(type) {
+        const resultArea = document.getElementById('result');
+        const foodContainer = document.getElementById('food-tags');
+        const recipeName = document.getElementById('recipe-name');
+        const recipeDetail = document.getElementById('recipe-detail');
+        const healthTip = document.getElementById('health-tip');
+
+        // 按钮高亮处理
+        document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // 显示结果区域
+        resultArea.style.display = 'block';
+
+        let foods = [];
+        let recipe = {};
+        let tip = currentTerm.desc; // 默认使用节气的描述
+
+        // 基础食材库
+        let seasonalFoods = [];
+        
+        // 根据月份确定食材
+        if (currentMonth >= 3 && currentMonth <= 4) {
+            seasonalFoods = ["春笋", "菠菜", "韭菜", "豆芽", "香椿", "鸡胸肉"];
+        } else if (currentMonth >= 5 && currentMonth <= 7) {
+            seasonalFoods = ["苦瓜", "黄瓜", "冬瓜", "番茄", "绿豆", "鸭肉"];
+        } else if (currentMonth >= 8 && currentMonth <= 10) {
+            seasonalFoods = ["莲藕", "百合", "雪梨", "银耳", "南瓜", "牛肉"];
+        } else {
+            seasonalFoods = ["白萝卜", "白菜", "羊肉", "栗子", "黑芝麻", "海参"];
+        }
+
+        // 根据目标调整
+        if (type === 'fat_loss') {
+            // 减脂：筛选低卡
+            foods = seasonalFoods.filter(f => !["羊肉", "栗子"].includes(f));
+            foods.push("西兰花", "魔芋", "深海鱼");
+            recipe = {
+                name: "时令鲜蔬清炒鸡胸",
+                detail: `选用当季的${seasonalFoods[0]}切片，搭配鸡胸肉丁。少油快炒，保留食材原味。鸡胸肉提供高蛋白，时令蔬菜提供饱腹感纤维。`
+            };
+        } else if (type === 'muscle_gain') {
+            // 增肌：加碳水和蛋白
+            foods = seasonalFoods;
+            foods.push("牛肉", "鸡蛋", "藜麦", "红薯");
+            recipe = {
+                name: "节气滋补牛肉炖时蔬",
+                detail: `选用瘦牛肉切块，搭配当季根茎类蔬菜（如${seasonalFoods[0]}）慢炖。牛肉富含肌氨酸，配合优质碳水，助力肌肉合成。`
+            };
+        } else {
+            // 养生：均衡
+            foods = seasonalFoods;
+            foods.push("豆腐", "虾仁", "燕麦");
+            recipe = {
+                name: "顺时养生杂蔬汤",
+                detail: `将当季新鲜蔬菜（${seasonalFoods[0]}、${seasonalFoods[1]}）与豆腐或虾仁同煮，清淡鲜美，减轻肠胃负担。`
+            };
+        }
+
+        // 渲染页面
+        foodContainer.innerHTML = foods.map(f => `<span class="food-tag">${f}</span>`).join('');
+        recipeName.innerText = recipe.name;
+        recipeDetail.innerText = recipe.detail;
+        healthTip.innerText = tip;
+        
+        // 滚动到结果区
+        resultArea.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
